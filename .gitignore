@@ -1,3 +1,7 @@
 /mnist_data
 /Protocols
 /mnist_digits_reserve.pt
+__pycache__
+.ipynb_checpoints
+.vscode
+*.pyc
