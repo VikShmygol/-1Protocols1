@@ -13,8 +13,14 @@ from torch.utils import data
 from PIL import Image
 import cnn_class as cnn
 
+
 class ImgProc:
-    
+
+    """
+    Processing of transformed image (aligned to the selected template) regions of 
+    interest (ROIs): splitting numbers into digits (28*28 grayscale), evaluating 
+    digit image with CNN 
+    """
     def __init__(self, template_obj, explored_obj):
         self.template = template_obj 
         self.explored_page = explored_obj
@@ -29,8 +35,10 @@ class ImgProc:
             transforms.ToTensor(),  
         ])
     
+    # Extracting ROIs from transformed image acccording to
+    # its location on template picture
     def __ROI_extraction(self, dict, img_num):
-        img_gray = self.explored_page.get_gray()
+        img_gray = self.explored_page.gray
  
         for count, key in enumerate(dict):
             offset = np.array(dict[key][0])
@@ -44,15 +52,16 @@ class ImgProc:
             
             self.ROI_dict[key] = self.__adjust(roi)
 
+    # Adjusting ROI exposure
     def __adjust(self, image):
-        ### contrast adjusting
+        # Contrast adjusting
         sum_luminosity = np.sum(image)
         average_luminosity = sum_luminosity / (image.shape[0] * image.shape[1])
         ratio = np.sqrt(cm.kTemplateLuminosity / average_luminosity)
         image = np.clip(image*ratio, 0, 255)
         image = image.astype(np.uint8)
 
-        ### filtering, historgram equalization, invertion
+        # Filtering, historgram equalization, invertion
         image= cv2.bilateralFilter(image, -1, 2, 2)
         clahe = cv2.createCLAHE(clipLimit=10.0, tileGridSize=(10, 10))
         image = clahe.apply(image.astype(np.uint8))
@@ -62,6 +71,7 @@ class ImgProc:
 
         return image                           
 
+    # Clearing up a pic, extracting digits' countours
     def __extract_character(self, image):
         chars_labels = []
         processed_chars = []
@@ -69,7 +79,7 @@ class ImgProc:
         high_thresh, bin_image = cv2.threshold(image, 0, 255, 
                                                 cv2.THRESH_BINARY + cv2.THRESH_OTSU)
 
-        ### Cleaning up lines underneath the handwritten number
+        # Clearing up lines underneath the handwritten number
         edges = cv2.Canny(bin_image, 5, 15, apertureSize=3)
         lines = cv2.HoughLinesP(bin_image, 1, np.pi/180, 20, minLineLength=15, maxLineGap=1)
 
@@ -130,6 +140,7 @@ class ImgProc:
             processed_chars.append(output_image)
         return processed_chars
 
+    # Interfering a picture with pretrained CNN
     def __evaluate_digit(self, digit_img):
         img_t = self.transform(digit_img).to(device='cuda')
         batch_t = torch.unsqueeze(img_t, 0)
@@ -138,28 +149,19 @@ class ImgProc:
 
         return str(np.argmax(result_vec))
 
+    # This method combines all together
     def process(self, img_num):  
         self.__ROI_extraction(cm.kFirstPageDist, img_num)
         digits_images = []
-        combined_digits = np.zeros((28, 1), np.uint8)
-
+        
         for key in self.ROI_dict:
             number = ''
             digits_images = self.__extract_character(self.ROI_dict[key])
 
-            combined_digits = np.zeros((28, 1), np.uint8) #just for test
             for cnt, pic in enumerate(digits_images):
                 number += self.__evaluate_digit(pic)
-                # img_name = 'Protocols/Digits/test_' + \
-                #             str(img_num) + '_' + str(cnt) +'.jpg' 
-                # cv2.imwrite(img_name, pic)
-                combined_digits = np.hstack((combined_digits, pic)) #just for test
-            img_name = ('Protocols/Test_digits/test_' +  ### reunited nums saving
-                            str(img_num) + '_' + str(key) +'.jpg') # just for test  ### reunited nums saving
-            cv2.imwrite(img_name, combined_digits) #just for test  ### reunited nums saving
-            combined_digits = np.zeros((28, 1), np.uint8) #just for test ### reunited nums saving
 
-            if number != '':
+            if number:
                 self.dict_with_nums[key] = int(number)
 
         return self.dict_with_nums       

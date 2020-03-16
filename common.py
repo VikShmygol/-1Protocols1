@@ -3,20 +3,19 @@ from matplotlib import pyplot as plt
 import numpy as np
 import cv2
 
-
-### Some named tuples
+# Some named tuples
 Coordinate = namedtuple('Coordinate', 'x y')
 Offset = namedtuple('Offset', 'x y')
 Size = namedtuple('Size', 'w h')
 
-### Some constants
+# Some constants
 kTemplateLuminosity = 210
 kOutputImgShape = (28, 28)
 kWHRatioMin =  0.3 # min width/height ratio for char detection
 kWHRatioMax =  1.9 # max width/height ratio for char detection
 
-### First page dictionary with offsets for each ROI on the image
-### (upper left corner, lower right corner)
+# First page dictionary with offsets for each ROI on the image
+# (upper left corner, lower right corner)
 kFirstPageDist = {"0_vyborcha_diln_num" : 
                     (Coordinate(245, 240), Coordinate(90, 40)),
                     "1_vyborcyi_okrug_num" : 
@@ -37,9 +36,10 @@ kFirstPageDist = {"0_vyborcha_diln_num" :
                     (Coordinate(607, 850), Coordinate(75, 50)),
                     }
 
-### Some functions
+# Some functions
 to_rgb = lambda x: cv2.cvtColor(x, cv2.COLOR_BGR2RGB)
 to_bin = lambda x: cv2.threshold(x, 127, 255, cv2.THRESH_BINARY)[1]
+
 
 def plot_image(img, title=None, figsize=None):
     if not figsize:
@@ -52,7 +52,8 @@ def plot_image(img, title=None, figsize=None):
     if title and type(title) == str:
         ax.set_title(title)
     ax.imshow(rgb_img)
-        
+
+
 def imshow_components(labels):
     # Map component labels to hue val
     label_hue = np.uint8(179*labels/np.max(labels))
@@ -68,6 +69,7 @@ def imshow_components(labels):
     cv2.imshow('labeled.png', labeled_img)
     cv2.waitKey()
     
+
 def check_num(list_to_check, num=10):
     length = len(list_to_check)
     res = num
@@ -105,6 +107,8 @@ def rotate_bound(image, angle):
     # perform the actual rotation and return the image
     return cv2.warpAffine(image, M, (nW, nH))
 
+
+# inserting countours of number into 28x28 pic
 def insert_pic(output_size, pic, resize=False):
     width_offset = (output_size[1] - pic.shape[1]) // 2
     height_offset = (output_size[0] - pic.shape[0]) // 2 
@@ -118,8 +122,4 @@ def insert_pic(output_size, pic, resize=False):
     return output_image
 
 if __name__ == "__main__":
-    img2 = cv2.imread('Protocols/1_1.jpg')
-    img3 = rotate_bound(img2, 50)
-    cv2.imwrite('Protocols/1_1_rot.jpg',img3)
-    plt.imshow(to_rgb(img3))
-    plt.show()
+    pass

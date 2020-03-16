@@ -11,10 +11,7 @@ class Template:
         self.descriptors = []
         self.file_name = file_name
 
-        if file_name == '':
-            self.image = img_array
-        else:
-            self.image = cv2.imread(file_name)
+        self.image = img_array if not file_name else cv2.imread(file_name)
         self.update_keypoints_descriptors(self.image)
 
     def update_keypoints_descriptors(self, image):
@@ -24,20 +21,5 @@ class Template:
         self.keypoints, self.descriptors = self.sift.detectAndCompute(self.gray, 
                                                                     mask=None)
         self.image = image
-    
-    def get_keypoints(self):      
-        return self.keypoints
-    
-    def get_descriptors(self):
-        return self.descriptors
-    
-    def get_image(self):
-        return self.image
-
-    def get_shape(self):
-        return self.image.shape
-
-    def get_gray(self):
-        return self.gray
                 
     
